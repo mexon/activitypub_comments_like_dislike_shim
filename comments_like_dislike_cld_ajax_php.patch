@@ -1,0 +1,101 @@
+Index: trunk/inc/classes/cld-ajax.php
+===================================================================
+--- trunk/inc/classes/cld-ajax.php	(revision 3007667)
++++ trunk/inc/classes/cld-ajax.php	(working copy)
+@@ -10,8 +10,49 @@
+ 
+             add_action('wp_ajax_cld_comment_undo_ajax_action', array($this, 'like_dislike_undo_action'));
+             add_action('wp_ajax_nopriv_cld_comment_undo_ajax_action', array($this, 'like_dislike_undo_action'));
++
++            add_action('cld_comment_add_like_dislike', array($this, 'add_like_dislike'), 10, 2);
++            add_action('cld_comment_add_like_dislike_result', array($this, 'add_like_dislike_result'), 10, 1);
+         }
+ 
++        function add_like_dislike($comment_id, $type) {
++            if ($type == 'like') {
++                $like_count = get_comment_meta($comment_id, 'cld_like_count', true);
++                if (empty($like_count)) {
++                    $like_count = 0;
++                }
++                $like_count = $like_count + 1;
++                $check = update_comment_meta($comment_id, 'cld_like_count', $like_count);
++
++                if ($check) {
++
++                    $response_array = array('success' => true, 'latest_count' => $like_count);
++                } else {
++                    $response_array = array('success' => false, 'latest_count' => $like_count);
++                }
++            } else {
++                $dislike_count = get_comment_meta($comment_id, 'cld_dislike_count', true);
++                if (empty($dislike_count)) {
++                    $dislike_count = 0;
++                }
++                $dislike_count = $dislike_count + 1;
++                $check = update_comment_meta($comment_id, 'cld_dislike_count', $dislike_count);
++                if ($check) {
++                    $response_array = array('success' => true, 'latest_count' => $dislike_count);
++                } else {
++                    $response_array = array('success' => false, 'latest_count' => $dislike_count);
++                }
++            }
++            do_action('cld_comment_add_like_dislike_result', $response_array);
++        }
++
++        function add_like_dislike_result($response_array) {
++            echo json_encode($response_array);
++
++            //$this->print_array( $response_array );
++            die();
++        }
++        
+         function like_dislike_action() {
+             if (isset($_POST['_wpnonce']) && wp_verify_nonce($_POST['_wpnonce'], 'cld-ajax-nonce')) {
+                 $comment_id = sanitize_text_field($_POST['comment_id']);
+@@ -74,34 +115,8 @@
+                         die();
+                     }
+                 }
+-                if ($type == 'like') {
+-                    $like_count = get_comment_meta($comment_id, 'cld_like_count', true);
+-                    if (empty($like_count)) {
+-                        $like_count = 0;
+-                    }
+-                    $like_count = $like_count + 1;
+-                    $check = update_comment_meta($comment_id, 'cld_like_count', $like_count);
++                do_action('cld_comment_add_like_dislike', $comment_id, $type);
+ 
+-                    if ($check) {
+-
+-                        $response_array = array('success' => true, 'latest_count' => $like_count);
+-                    } else {
+-                        $response_array = array('success' => false, 'latest_count' => $like_count);
+-                    }
+-                } else {
+-                    $dislike_count = get_comment_meta($comment_id, 'cld_dislike_count', true);
+-                    if (empty($dislike_count)) {
+-                        $dislike_count = 0;
+-                    }
+-                    $dislike_count = $dislike_count + 1;
+-                    $check = update_comment_meta($comment_id, 'cld_dislike_count', $dislike_count);
+-                    if ($check) {
+-                        $response_array = array('success' => true, 'latest_count' => $dislike_count);
+-                    } else {
+-                        $response_array = array('success' => false, 'latest_count' => $dislike_count);
+-                    }
+-                }
+-
+                 if ($cld_settings['basic_settings']['like_dislike_resistriction'] == 'cookie') {
+                     $cookie_name = 'cld_' . $comment_id;
+                     setcookie($cookie_name, $type, time() + 3600 * 24 * 365, '/');
+@@ -153,10 +168,6 @@
+                  * @since 1.0.7
+                  */
+                 do_action('cld_after_ajax_process', $comment_id);
+-                echo json_encode($response_array);
+-
+-                //$this->print_array( $response_array );
+-                die();
+             } else {
+                 die('No script kiddies please!');
+             }
