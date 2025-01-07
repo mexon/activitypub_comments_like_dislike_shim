@@ -57,6 +57,8 @@ To use this, you need to install [the Comments Like Dislike plugin](https://en-c
     $ svn patch comments_like_dislike_cld_ajax_php.patch
     U         trunk/inc/classes/cld-ajax.php
 
+I have [requested](https://wordpress.org/support/topic/feature-request-support-likes-from-activitypub-and-other-sources/) that the necessary changes be included in mainline, but there has been no response.
+
 ## Design
 
 To make this work, the user needs three plugins: an ActivityPub plugin, a Comments Like Dislike plugin, and a weird "shim" plugin between the two.  Why don't they just talk directly to each other?
